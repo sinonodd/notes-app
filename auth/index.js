@@ -9,14 +9,8 @@ require('dotenv').config();
 
 users.createIndex('username', { unique: true });
 
-router.get('/', (req,res) => {
-    res.json({
-        message: "Hellow i'm lowAuth"
-    });
-});
-
 const schema = Joi.object({
-    username: Joi.string().alphanum().min(2).max(30).required(),
+    username: Joi.string().regex(/(^[a-zA-Z0-9_]*$)/).min(2).max(30).required(),
     password: Joi.string().trim().min(8).pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')).required(),
     confirmPassword: Joi.ref('password'),
     email: Joi.string().email()
@@ -33,10 +27,12 @@ router.post('/signup', (req,res,next) => {
                 res.status(409);
                 next(error);
             } else {
-                bcrypt.hash(req.body.password.trim(), 10).then(hashedPassword => {
+                bcrypt.hash(req.body.password.trim(), 12).then(hashedPassword => {
                     const newUser = {
                         username: req.body.username,
-                        password: hashedPassword
+                        password: hashedPassword,
+                        role: 'user',
+                        active: true
                     };
                     users.insert(newUser).then(insertedUser => {
                         delete insertedUser.password;
@@ -63,14 +59,16 @@ router.post('/login', (req,res,next) => {
     if (result.error === undefined) {
         users.findOne({ username: req.body.username })
         .then(user => {
-            if (user) {
+            if (user && user.avtive) {
                 bcrypt
                     .compare(req.body.password, user.password)
                     .then((result) => {
                         if (result) {
                             const payload = {
                                 username: user.username,
-                                _id: user._id
+                                _id: user._id,
+                                role: user.role,
+                                active: user.active
                             };
                             jwt.sign(payload, process.env.TOKEN_SECRET, {
                             expiresIn: '1d'
