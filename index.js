@@ -1,12 +1,15 @@
 const express = require('express');
 const app = express();
 const volleyball = require('volleyball');
+const helmet = require('helmet');
 const auth = require('./auth');
 const cors = require('cors');
 const middlewares = require('./auth/middlewares');
-const api = require('./api/notes');
+const notes = require('./api/notes');
+const users = require('./api/users');
 
 app.use(volleyball);
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(middlewares.checkTokenSetUser);
@@ -19,7 +22,8 @@ app.get('/', (req,res) => {
 });
 
 app.use('/auth', auth);
-app.use('/api/v1/notes', middlewares.isLoggedIn, api);
+app.use('/api/v1/users', middlewares.isLoggedIn, middlewares.isAdmin, users);
+app.use('/api/v1/notes', middlewares.isLoggedIn, notes);
 
 function notFound(req,res,next) {
     res.status(404);

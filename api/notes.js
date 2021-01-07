@@ -5,7 +5,7 @@ const db = require('../db/connection');
 const notes = db.get('notes');
 
 const schema = Joi.object({
-    title: Joi.string().alphanum().max(30).required(),
+    title: Joi.string().regex(/^\w+(?:\s+\w+)*$/).max(30).required(),
     content: Joi.string().required(),
     });
 
